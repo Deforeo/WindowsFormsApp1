@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -13,15 +14,16 @@ namespace WindowsFormsApp1
     public partial class Form1 : Form
     {
 
-        private Dictionary<string, Recipe> recipes;
-        private Dictionary<string, double> stockIngredients; 
-        private Dictionary<string, double> stockProducts;    
+        private SqlConnection connection;
+        private BindingSource bsRequired = new BindingSource();
+        private BindingSource bsStock = new BindingSource();
+        private BindingSource bsToOrder = new BindingSource();
 
         public Form1()
         {
             InitializeComponent();
             InitializeTestData();
-            FillRecipeComboBox();
+            LoadRecipes();
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -31,65 +33,34 @@ namespace WindowsFormsApp1
 
         private void InitializeTestData()
         {
-            
-            recipes = new Dictionary<string, Recipe>
-            {
-                {
-                    "Хлеб белый",
-                    new Recipe("Хлеб белый", new Dictionary<string, (double Amount, string Unit)>
-                    {
-                        ["Мука"] = (500, "г"),
-                        ["Дрожжи"] = (10, "г"),
-                        ["Соль"] = (5, "г"),
-                        ["Вода"] = (300, "мл")
-                    })
-                },
-                {
-                    "Кекс",
-                    new Recipe("Кекс", new Dictionary<string, (double Amount, string Unit)>
-                    {
-                        ["Мука"] = (200, "г"),
-                        ["Сахар"] = (150, "г"),
-                        ["Масло"] = (100, "г"),
-                        ["Яйца"] = (2, "шт")
-                    })
-                }
-            };
 
-            
-            stockIngredients = new Dictionary<string, double>
-            {
-                ["Мука"] = 2000,
-                ["Дрожжи"] = 50,
-                ["Соль"] = 100,
-                ["Вода"] = 1000,
-                ["Сахар"] = 500,
-                ["Масло"] = 200,
-                ["Яйца"] = 10
-            };
+            string connectionString = @"Data Source=ELMIRAVNUKO5E3C\SQLEXPRESS;Initial Catalog=Pekarnya;Integrated Security=True";
+            connection = new SqlConnection(connectionString);
 
-            
-            stockProducts = new Dictionary<string, double>
+            try
             {
-                ["Хлеб белый"] = 5,
-                ["Кекс"] = 2
-            };
-        }
-
-        private void FillRecipeComboBox()
-        {
-            comboBoxRecipes.Items.Clear();
-            foreach (var recipe in recipes.Keys)
-            {
-                comboBoxRecipes.Items.Add(recipe);
+                connection.Open();
             }
-            if (comboBoxRecipes.Items.Count > 0)
-                comboBoxRecipes.SelectedIndex = 0;
-        }
+            catch (SqlException ex)
+            {
+                MessageBox.Show($"Произошла ошиька подключения: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
 
-        private void btnCalculate_Click(object sender, EventArgs e)
+        }
+    
+
+       
+
+        private void LoadRecipes()
         {
-            
+            DataTable dt = new DataTable();
+            using (SqlDataAdapter adapter = new SqlDataAdapter("SELECT Id, Name FROM Recipes", connection))
+            {
+                adapter.Fill(dt);
+            }
+            comboBoxRecipes.DisplayMember = "Name";
+            comboBoxRecipes.ValueMember = "Id";
+            comboBoxRecipes.DataSource = dt;
         }
 
         private void btnCalculate_Click_1(object sender, EventArgs e)
@@ -111,75 +82,87 @@ namespace WindowsFormsApp1
                     return;
                 }
 
-                string recipeName = comboBoxRecipes.SelectedItem.ToString();
-                Recipe selectedRecipe = recipes[recipeName];
+                int recipeId = (int)comboBoxRecipes.SelectedValue;
+                string recipeName = comboBoxRecipes.Text;
 
-               
-                double productInStock = stockProducts.ContainsKey(recipeName) ? stockProducts[recipeName] : 0;
-                lblProductStock.Text = $"На складе: {productInStock} шт.";
-
-                
-                var requiredIngredients = new Dictionary<string, (double Amount, string Unit)>();
-                foreach (var ing in selectedRecipe.Ingredients)
+                using (SqlCommand cmd = new SqlCommand("SELECT StockQuantity FROM Products WHERE Name=@name", connection))
                 {
-                    double requiredAmount = ing.Value.Amount * quantity;
-                    requiredIngredients[ing.Key] = (requiredAmount, ing.Value.Unit);
+                    cmd.Parameters.AddWithValue("@name", recipeName);
+                    object res = cmd.ExecuteScalar();
+                    double productStock = (res == null) ? 0 : Convert.ToDouble(res);
+                    lblProductStock.Text = $"На складе: {productStock} шт.";
                 }
 
-                
-                var toOrder = new Dictionary<string, (double Amount, string Unit)>();
-
-                
-                listRequired.Items.Clear();
-                foreach (var ing in requiredIngredients)
+                // --- 2) Получаем рецепт (ингредиенты на 1 шт) ---
+                DataTable recipeTable = new DataTable();
+                string sqlRecipe = @"
+            SELECT i.Name, ri.Amount, i.Unit, i.StockQuantity
+            FROM RecipeIngredients ri
+            JOIN Ingredients i ON ri.IngredientId = i.Id
+            WHERE ri.RecipeId = @rid";
+                using (SqlDataAdapter da = new SqlDataAdapter(sqlRecipe, connection))
                 {
-                    listRequired.Items.Add($"{ing.Key}: {ing.Value.Amount} {ing.Value.Unit}");
+                    da.SelectCommand.Parameters.AddWithValue("@rid", recipeId);
+                    da.Fill(recipeTable);
                 }
 
-                
-                listStock.Items.Clear();
-                foreach (var ing in stockIngredients)
+                // --- 3) Считаем требуемое, остатки и к заказу ---
+                DataTable requiredTable = new DataTable();
+                requiredTable.Columns.Add("Ингредиент");
+                requiredTable.Columns.Add("Требуется", typeof(double));
+                requiredTable.Columns.Add("Единица");
+
+                DataTable stockTable = new DataTable();
+                stockTable.Columns.Add("Ингредиент");
+                stockTable.Columns.Add("На складе", typeof(double));
+                stockTable.Columns.Add("Единица");
+
+                DataTable toOrderTable = new DataTable();
+                toOrderTable.Columns.Add("Ингредиент");
+                toOrderTable.Columns.Add("Заказать", typeof(double));
+                toOrderTable.Columns.Add("Единица");
+
+                foreach (DataRow row in recipeTable.Rows)
                 {
-                    
-                    if (requiredIngredients.ContainsKey(ing.Key))
-                    {
-                        listStock.Items.Add($"{ing.Key}: {ing.Value} {requiredIngredients[ing.Key].Unit}");
-                    }
-                    else
-                    {
-                        listStock.Items.Add($"{ing.Key}: {ing.Value} (не используется в рецепте)");
-                    }
+                    string name = row["Name"].ToString();
+                    double amountPerOne = Convert.ToDouble(row["Amount"]);
+                    string unit = row["Unit"].ToString();
+                    double stock = Convert.ToDouble(row["StockQuantity"]);
+
+                    double required = amountPerOne * quantity;
+                    double needToOrder = required - stock;
+                    if (needToOrder < 0) needToOrder = 0;
+
+                    requiredTable.Rows.Add(name, required, unit);
+                    stockTable.Rows.Add(name, stock, unit);
+                    toOrderTable.Rows.Add(name, needToOrder, unit);
                 }
 
-                
-                listToOrder.Items.Clear();
-                foreach (var required in requiredIngredients)
-                {
-                    string ingredientName = required.Key;
-                    double requiredAmount = required.Value.Amount;
-                    string unit = required.Value.Unit;
-
-                    double stockAmount = stockIngredients.ContainsKey(ingredientName) ? stockIngredients[ingredientName] : 0;
-                    double needToOrder = requiredAmount - stockAmount;
-                    if (needToOrder > 0)
-                    {
-                        listToOrder.Items.Add($"{ingredientName}: {needToOrder} {unit}");
-                    }
-                    else
-                    {
-                        listToOrder.Items.Add($"{ingredientName}: 0 (достаточно)");
-                    }
-                }
+                // Привязываем таблицы к DataGridView
+                dgvRequired.DataSource = requiredTable;
+                dgvStock.DataSource = stockTable;
+                dgvToOrder.DataSource = toOrderTable;
             }
+
             catch (Exception ex)
             {
                 MessageBox.Show($"Произошла ошибка: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            connection?.Close();
+            base.OnFormClosed(e);
+        }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 
     
-    public class Recipe
+    /*public class Recipe
     {
         public string Name;
         public Dictionary<string, (double Amount, string Unit)> Ingredients { get; set; }
@@ -189,6 +172,6 @@ namespace WindowsFormsApp1
             Name = name;
             Ingredients = ingredients;
         }
-    }
+    }*/
     
 }

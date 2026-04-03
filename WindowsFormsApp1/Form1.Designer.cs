@@ -33,26 +33,29 @@ namespace WindowsFormsApp1
             this.txtQuantity = new System.Windows.Forms.TextBox();
             this.btnCalculate = new System.Windows.Forms.Button();
             this.lblProductStock = new System.Windows.Forms.Label();
-            this.listRequired = new System.Windows.Forms.ListBox();
-            this.listStock = new System.Windows.Forms.ListBox();
-            this.listToOrder = new System.Windows.Forms.ListBox();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
+            this.dgvRequired = new System.Windows.Forms.DataGridView();
+            this.dgvStock = new System.Windows.Forms.DataGridView();
+            this.dgvToOrder = new System.Windows.Forms.DataGridView();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvRequired)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvStock)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvToOrder)).BeginInit();
             this.SuspendLayout();
             // 
             // comboBoxRecipes
             // 
             this.comboBoxRecipes.FormattingEnabled = true;
-            this.comboBoxRecipes.Location = new System.Drawing.Point(271, 228);
+            this.comboBoxRecipes.Location = new System.Drawing.Point(271, 294);
             this.comboBoxRecipes.Name = "comboBoxRecipes";
             this.comboBoxRecipes.Size = new System.Drawing.Size(121, 21);
             this.comboBoxRecipes.TabIndex = 0;
             // 
             // txtQuantity
             // 
-            this.txtQuantity.Location = new System.Drawing.Point(271, 282);
+            this.txtQuantity.Location = new System.Drawing.Point(271, 334);
             this.txtQuantity.Name = "txtQuantity";
             this.txtQuantity.Size = new System.Drawing.Size(41, 20);
             this.txtQuantity.TabIndex = 1;
@@ -61,7 +64,7 @@ namespace WindowsFormsApp1
             // 
             this.btnCalculate.BackColor = System.Drawing.Color.SpringGreen;
             this.btnCalculate.Font = new System.Drawing.Font("Arial Black", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnCalculate.Location = new System.Drawing.Point(208, 328);
+            this.btnCalculate.Location = new System.Drawing.Point(216, 360);
             this.btnCalculate.Name = "btnCalculate";
             this.btnCalculate.Size = new System.Drawing.Size(238, 78);
             this.btnCalculate.TabIndex = 2;
@@ -73,45 +76,11 @@ namespace WindowsFormsApp1
             // 
             this.lblProductStock.AutoSize = true;
             this.lblProductStock.Font = new System.Drawing.Font("Arial Black", 48F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.lblProductStock.Location = new System.Drawing.Point(12, 143);
+            this.lblProductStock.Location = new System.Drawing.Point(-3, 159);
             this.lblProductStock.Name = "lblProductStock";
             this.lblProductStock.Size = new System.Drawing.Size(253, 90);
             this.lblProductStock.TabIndex = 3;
             this.lblProductStock.Text = "label1";
-            // 
-            // listRequired
-            // 
-            this.listRequired.BackColor = System.Drawing.Color.Maroon;
-            this.listRequired.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.listRequired.ForeColor = System.Drawing.Color.Cyan;
-            this.listRequired.FormattingEnabled = true;
-            this.listRequired.Location = new System.Drawing.Point(158, 45);
-            this.listRequired.Name = "listRequired";
-            this.listRequired.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.listRequired.Size = new System.Drawing.Size(207, 91);
-            this.listRequired.TabIndex = 4;
-            // 
-            // listStock
-            // 
-            this.listStock.BackColor = System.Drawing.Color.Maroon;
-            this.listStock.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.listStock.ForeColor = System.Drawing.Color.Aqua;
-            this.listStock.FormattingEnabled = true;
-            this.listStock.Location = new System.Drawing.Point(390, 45);
-            this.listStock.Name = "listStock";
-            this.listStock.Size = new System.Drawing.Size(253, 93);
-            this.listStock.TabIndex = 5;
-            // 
-            // listToOrder
-            // 
-            this.listToOrder.BackColor = System.Drawing.Color.Maroon;
-            this.listToOrder.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.listToOrder.ForeColor = System.Drawing.Color.Cyan;
-            this.listToOrder.FormattingEnabled = true;
-            this.listToOrder.Location = new System.Drawing.Point(12, 45);
-            this.listToOrder.Name = "listToOrder";
-            this.listToOrder.Size = new System.Drawing.Size(116, 93);
-            this.listToOrder.TabIndex = 6;
             // 
             // label1
             // 
@@ -127,17 +96,18 @@ namespace WindowsFormsApp1
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Arial", 14.25F, ((System.Drawing.FontStyle)((System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Italic))));
-            this.label2.Location = new System.Drawing.Point(154, 19);
+            this.label2.Location = new System.Drawing.Point(195, 19);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(211, 23);
             this.label2.TabIndex = 8;
             this.label2.Text = "Сколько требуется";
+            this.label2.Click += new System.EventHandler(this.label2_Click);
             // 
             // label3
             // 
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("Arial", 14.25F, ((System.Drawing.FontStyle)((System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Italic))), System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label3.Location = new System.Drawing.Point(386, 19);
+            this.label3.Location = new System.Drawing.Point(447, 19);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(107, 23);
             this.label3.TabIndex = 9;
@@ -146,11 +116,47 @@ namespace WindowsFormsApp1
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(268, 266);
+            this.label4.Location = new System.Drawing.Point(271, 318);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(41, 13);
             this.label4.TabIndex = 10;
             this.label4.Text = "Кол-во";
+            // 
+            // dgvRequired
+            // 
+            this.dgvRequired.AllowUserToAddRows = false;
+            this.dgvRequired.AllowUserToDeleteRows = false;
+            this.dgvRequired.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.dgvRequired.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvRequired.Location = new System.Drawing.Point(199, 45);
+            this.dgvRequired.Name = "dgvRequired";
+            this.dgvRequired.ReadOnly = true;
+            this.dgvRequired.Size = new System.Drawing.Size(233, 111);
+            this.dgvRequired.TabIndex = 11;
+            // 
+            // dgvStock
+            // 
+            this.dgvStock.AllowUserToAddRows = false;
+            this.dgvStock.AllowUserToDeleteRows = false;
+            this.dgvStock.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.dgvStock.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvStock.Location = new System.Drawing.Point(438, 45);
+            this.dgvStock.Name = "dgvStock";
+            this.dgvStock.ReadOnly = true;
+            this.dgvStock.Size = new System.Drawing.Size(214, 111);
+            this.dgvStock.TabIndex = 11;
+            // 
+            // dgvToOrder
+            // 
+            this.dgvToOrder.AllowUserToAddRows = false;
+            this.dgvToOrder.AllowUserToDeleteRows = false;
+            this.dgvToOrder.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.dgvToOrder.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvToOrder.Location = new System.Drawing.Point(12, 45);
+            this.dgvToOrder.Name = "dgvToOrder";
+            this.dgvToOrder.ReadOnly = true;
+            this.dgvToOrder.Size = new System.Drawing.Size(181, 111);
+            this.dgvToOrder.TabIndex = 11;
             // 
             // Form1
             // 
@@ -158,13 +164,13 @@ namespace WindowsFormsApp1
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.LightSlateGray;
             this.ClientSize = new System.Drawing.Size(665, 450);
+            this.Controls.Add(this.dgvToOrder);
+            this.Controls.Add(this.dgvStock);
+            this.Controls.Add(this.dgvRequired);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.listToOrder);
-            this.Controls.Add(this.listStock);
-            this.Controls.Add(this.listRequired);
             this.Controls.Add(this.lblProductStock);
             this.Controls.Add(this.btnCalculate);
             this.Controls.Add(this.txtQuantity);
@@ -172,6 +178,9 @@ namespace WindowsFormsApp1
             this.Name = "Form1";
             this.Text = "Form1";
             this.Load += new System.EventHandler(this.Form1_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.dgvRequired)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvStock)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvToOrder)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -183,13 +192,13 @@ namespace WindowsFormsApp1
         private System.Windows.Forms.TextBox txtQuantity;
         private System.Windows.Forms.Button btnCalculate;
         private System.Windows.Forms.Label lblProductStock;
-        private System.Windows.Forms.ListBox listRequired;
-        private System.Windows.Forms.ListBox listStock;
-        private System.Windows.Forms.ListBox listToOrder;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.DataGridView dgvRequired;
+        private System.Windows.Forms.DataGridView dgvStock;
+        private System.Windows.Forms.DataGridView dgvToOrder;
     }
 }
 
